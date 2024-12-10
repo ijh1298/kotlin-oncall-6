@@ -18,16 +18,16 @@ class WorkerValidator(
         return true
     }
 
-    private fun isAllInWeekdayWorkers(weekdayWorkers: List<String>): Boolean {
-        val holidayWorkers = rawWorkers.split(',').map { it }
-        return holidayWorkers.containsAll(weekdayWorkers)
-    }
-
-    private fun validateWorkers() {
+    fun validateWorkers() {
         val parsed = rawWorkers.split(',').map { it }
 
         require(parsed.all { it.length in 1..5 }) { Error.INVALID_WORKER.msg }
         require(parsed.size in 5..35) { Error.INVALID_WORKER.msg }
         require(parsed.toSet().size == parsed.size) { Error.INVALID_WORKER.msg }
+    }
+
+    private fun isAllInWeekdayWorkers(weekdayWorkers: List<String>): Boolean {
+        val holidayWorkers = rawWorkers.split(',').map { it }
+        return holidayWorkers.containsAll(weekdayWorkers)
     }
 }
