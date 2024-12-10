@@ -1,5 +1,7 @@
 package oncall
 
+import oncall.controller.OncallController
+
 fun main() {
-    TODO("프로그램 구현")
+    OncallController().run()
 }
