@@ -14,7 +14,7 @@ class MonthDayValidator(
         require(isInRange()) { Error.INVALID_MONTH_DAY.msg }
     }
 
-    private fun isValid() = Regex("^d+,.$").matches(rawMonthDay)
+    private fun isValid() = Regex("^\\d+,.$").matches(rawMonthDay)
 
     private fun setMonthDay() {
         val parsed = rawMonthDay.split(',').map { it }
