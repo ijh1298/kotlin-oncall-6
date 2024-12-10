@@ -7,52 +7,52 @@ object OncallService {
     private val endDateOfMonth = listOf(0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
     private var lastDayWorker = ""
 
+    private lateinit var today: Day
+    private var month: Int = 1
+    private lateinit var weekdayOrder: ArrayDeque<String>
+    private lateinit var holidayOrder: ArrayDeque<String>
+
     fun getMonthlySchedule(
         startDay: Day,
-        month: Int,
-        weekdayOrder: ArrayDeque<String>,
-        holidayOrder: ArrayDeque<String>
+        startMonth: Int,
+        inputWeekdayOrder: ArrayDeque<String>,
+        inputHolidayOrder: ArrayDeque<String>
     ): List<WorkDay> {
-        val schedule = mutableListOf<WorkDay>()
-        var today: Day = startDay
+        today = startDay
+        month = startMonth
+        weekdayOrder = inputWeekdayOrder
+        holidayOrder = inputHolidayOrder
 
+        val schedule = mutableListOf<WorkDay>()
         for (date in 1..endDateOfMonth[month]) {
-            schedule += makeDaySchedule(month, today, date, weekdayOrder, holidayOrder)
+            schedule += getDaySchedule(month, today, date)
             today = Day.entries[(today.ordinal + 1) % 7]
         }
         return schedule
     }
 
-    private fun makeDaySchedule(
-        month: Int,
-        day: Day,
-        date: Int,
-        weekdayOrder: ArrayDeque<String>,
-        holidayOrder: ArrayDeque<String>
-    ): WorkDay {
+    private fun getDaySchedule(month: Int, day: Day, date: Int): WorkDay {
         val isTodayHoliday = checkHoliday(month, date)
         var candidateWorker = ""
-        if (day.isWeekend) {
-            val firstWorkerOfHolidayOrder = holidayOrder.removeFirst()
-            if (lastDayWorker == firstWorkerOfHolidayOrder) {
-                candidateWorker = holidayOrder.removeFirst() // 이틀 연속 근무일 경우 다음 근무자를 먼저
-                holidayOrder.addFirst(firstWorkerOfHolidayOrder)
-                holidayOrder.addLast(candidateWorker)
-                return WorkDay(month, day.name, date, candidateWorker, isTodayHoliday)
-            }
-            holidayOrder.addLast(firstWorkerOfHolidayOrder)
-            return WorkDay(month, day.name, date, firstWorkerOfHolidayOrder, isTodayHoliday)
-        }
+        if (day.isWeekend || isTodayHoliday)
+            return makeDaySchedule(holidayOrder, day, date, isTodayHoliday)
+        return makeDaySchedule(weekdayOrder, day, date, false)
+    }
 
-        val firstWorkerOfWeekdayOrder = weekdayOrder.removeFirst()
-        if (lastDayWorker == firstWorkerOfWeekdayOrder) {
-            candidateWorker = weekdayOrder.removeFirst() // 이틀 연속 근무일 경우 다음 근무자를 먼저
-            weekdayOrder.addFirst(firstWorkerOfWeekdayOrder)
-            weekdayOrder.addLast(candidateWorker)
+    private fun makeDaySchedule(order: ArrayDeque<String>, day: Day, date: Int, isTodayHoliday: Boolean): WorkDay {
+        var candidateWorker = ""
+        val firstWorkerOfOrder = order.removeFirst()
+
+        if (lastDayWorker == firstWorkerOfOrder) {
+            candidateWorker = order.removeFirst() // 이틀 연속 근무일 경우 다음 근무자를 먼저
+            order.addFirst(firstWorkerOfOrder)
+            order.addLast(candidateWorker)
+            lastDayWorker = candidateWorker
             return WorkDay(month, day.name, date, candidateWorker, isTodayHoliday)
         }
-        weekdayOrder.addLast(firstWorkerOfWeekdayOrder)
-        return WorkDay(month, day.name, date, firstWorkerOfWeekdayOrder, isTodayHoliday)
+        order.addLast(firstWorkerOfOrder)
+        lastDayWorker = firstWorkerOfOrder
+        return WorkDay(month, day.name, date, firstWorkerOfOrder, isTodayHoliday)
     }
 
     private fun checkHoliday(month: Int, date: Int): Boolean {
